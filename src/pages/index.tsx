@@ -32,6 +32,26 @@ type HomeProps = {
 export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 	const { playList } = usePlayer()
 
+	async function teste() {
+		const res = await fetch(`/api/findByName/faladev`)
+		const podcast = await res.json()
+
+		console.log(podcast[0].feedUrl)
+
+		const result = await fetch(`/api/findFeed/`, {
+			method: 'POST',
+			body: JSON.stringify({ feedUrl: podcast[0].feedUrl }),
+		})
+		const episodes = await result.json()
+		console.log({ ...episodes })
+
+		// fetch(`/api/findFeedById/${podcast}`)
+		// 	.then((res) => res.json())
+		// 	.then((res) => console.log(res))
+		// 	.catch((e) => console.log(e))
+	}
+	teste()
+
 	const episodeList = [...latestEpisodes, ...allEpisodes]
 
 	return (
