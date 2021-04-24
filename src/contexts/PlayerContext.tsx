@@ -12,14 +12,21 @@ type PlayerContextData = {
 	episodeList: Episode[]
 	currentEpisodeIndex: number
 	isPlaying: boolean
+	isLooping: boolean
+	isShuffling: boolean
 	hasPrevious: boolean
 	hasNext: boolean
+	hasLoop: boolean
+	hasShuffle: boolean
 	togglePlay: () => void
+	toggleLoop: () => void
+	toggleShuffle: () => void
 	setPlayingState: (state: boolean) => void
 	play: (episode: Episode) => void
 	playList: (episodes: Episode[], index: number) => void
 	playNext: () => void
 	playPrevious: () => void
+	clearPlayState: () => void
 }
 
 export const PlayerContext = createContext({} as PlayerContextData)
@@ -34,6 +41,8 @@ export function PlayerContextProvider({
 	const [episodeList, setEpisodeList] = useState([])
 	const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0)
 	const [isPlaying, setIsPlaying] = useState(false)
+	const [isLooping, setIsLooping] = useState(false)
+	const [isShuffling, setIsShuffling] = useState(false)
 
 	function play(episode: Episode) {
 		setEpisodeList([episode])
@@ -51,15 +60,43 @@ export function PlayerContextProvider({
 		setIsPlaying(!isPlaying)
 	}
 
+	const hasLoop = episodeList.length >= 0
+
+	function toggleLoop() {
+		setIsLooping(!isLooping)
+	}
+
+	const hasShuffle = episodeList.length >= 1
+
+	function toggleShuffle() {
+		setIsShuffling(!isShuffling)
+	}
+
+	function clearPlayState() {
+		setEpisodeList([])
+		setCurrentEpisodeIndex(0)
+		setIsPlaying(false)
+	}
+
 	function setPlayingState(state: boolean) {
 		setIsPlaying(state)
 	}
 
 	const hasPrevious = currentEpisodeIndex > 0
-	const hasNext = currentEpisodeIndex + 1 < episodeList.length
+	const hasNext = isShuffling || currentEpisodeIndex + 1 < episodeList.length
+
+	function randomNumberIndex() {
+		return Math.floor(Math.random() * episodeList.length)
+	}
 
 	function playNext() {
-		if (hasNext) setCurrentEpisodeIndex(currentEpisodeIndex + 1)
+		if (isShuffling) {
+			let nextRandomEpisodeIndex = randomNumberIndex()
+			while (nextRandomEpisodeIndex === currentEpisodeIndex) {
+				nextRandomEpisodeIndex = randomNumberIndex()
+			}
+			setCurrentEpisodeIndex(nextRandomEpisodeIndex)
+		} else if (hasNext) setCurrentEpisodeIndex(currentEpisodeIndex + 1)
 	}
 
 	function playPrevious() {
@@ -75,10 +112,17 @@ export function PlayerContextProvider({
 				playList,
 				playNext,
 				playPrevious,
+				clearPlayState,
 				isPlaying,
+				isLooping,
+				isShuffling,
 				hasPrevious,
 				hasNext,
+				hasLoop,
+				hasShuffle,
 				togglePlay,
+				toggleLoop,
+				toggleShuffle,
 				setPlayingState,
 			}}
 		>
