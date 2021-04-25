@@ -6,6 +6,10 @@ type Episode = {
 	members: string
 	duration: number
 	url: string
+	podcast: {
+		id: string
+		name: string
+	}
 }
 
 type PlayerContextData = {
@@ -124,8 +128,7 @@ export function PlayerContextProvider({
 				toggleLoop,
 				toggleShuffle,
 				setPlayingState,
-			}}
-		>
+			}}>
 			{children}
 		</PlayerContext.Provider>
 	)

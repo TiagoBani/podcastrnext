@@ -2,6 +2,7 @@ import { GetStaticProps } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import Head from 'next/head'
+import DefaultErrorPage from 'next/error'
 
 import { format, parseISO } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
@@ -11,6 +12,7 @@ import { api } from '../services/api'
 import { convertDurationToTimeString } from '../utils/convertDurationToTimeString'
 
 import styles from './home.module.scss'
+import iTunesFindByName, { iTunesFindFeedByUrl } from '../services/itunes/find'
 
 type Episode = {
 	id: string
@@ -22,6 +24,10 @@ type Episode = {
 	durationAsString: string
 	description: string
 	url: string
+	podcast: {
+		id: string
+		name: string
+	}
 }
 
 type HomeProps = {
@@ -33,6 +39,18 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 	const { playList } = usePlayer()
 
 	const episodeList = [...latestEpisodes, ...allEpisodes]
+
+	// This includes setting the noindex header because static files always
+	// return a status 200 but the rendered not found page page should obviously not be indexed
+	if (episodeList?.length <= 0)
+		return (
+			<>
+				<Head>
+					<meta name='robots' content='noindex' />
+				</Head>
+				<DefaultErrorPage statusCode={404} />
+			</>
+		)
 
 	return (
 		<div className={styles.homepage}>
@@ -57,18 +75,18 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 									/>
 
 									<div className={styles.episodesDetails}>
-										<Link href={`/episodes/${episode.id}`}>
+										<Link
+											href={`/episodes/${episode.podcast.id}/${episode.id}`}>
 											<a>{episode.title}</a>
 										</Link>
-										<p>{episode.members}</p>
+										{/* <p>{episode.members}</p> */}
 										<span>{episode.publishedAt}</span>
 										<span>{episode.durationAsString}</span>
 									</div>
 
 									<button
 										type='button'
-										onClick={() => playList(episodeList, index)}
-									>
+										onClick={() => playList(episodeList, index)}>
 										<img src='/play-green.svg' alt='Tocar episódio' />
 									</button>
 								</li>
@@ -84,7 +102,7 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 						<tr>
 							<th></th>
 							<th>Podcast</th>
-							<th>Integrantes</th>
+							{/* <th>Integrantes</th> */}
 							<th>Data</th>
 							<th>Duração</th>
 							<th></th>
@@ -105,11 +123,12 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 											/>
 										</td>
 										<td>
-											<Link href={`/episodes/${episode.id}`}>
+											<Link
+												href={`/episodes/${episode.podcast.id}/${episode.id}`}>
 												<a>{episode.title}</a>
 											</Link>
 										</td>
-										<td>{episode.members}</td>
+										{/* <td>{episode.members}</td> */}
 										<td style={{ width: 100 }}>{episode.publishedAt}</td>
 										<td>{episode.durationAsString}</td>
 										<td>
@@ -117,8 +136,7 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 												type='button'
 												onClick={() =>
 													playList(episodeList, index + latestEpisodes.length)
-												}
-											>
+												}>
 												<img src='/play-green.svg' alt='Tocar episódio' />
 											</button>
 										</td>
@@ -133,38 +151,52 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 }
 //SSG
 export const getStaticProps: GetStaticProps = async () => {
-	const { data } = await api.get('episodes', {
-		params: {
-			_limit: 12,
-			_sort: 'published_at',
-			_order: 'desc',
-		},
-	})
+	try {
+		const podcast = await iTunesFindByName('faladev')
+		// const { data: podcast } = await api.get(`/api/itunes/find/name/faladev`)
+		// const { data } = await api.post(`/api/itunes/find/feed/url`, {
+		// 	feedUrl: podcast[0].feedUrl,
+		// })
+		const data = await iTunesFindFeedByUrl(podcast[0].feedUrl)
 
-	const episodes = data.map((episode) => ({
-		id: episode.id,
-		title: episode.title,
-		thumbnail: episode.thumbnail,
-		members: episode.members,
-		publishedAt: format(parseISO(episode.published_at), 'd MMM yy', {
-			locale: ptBR,
-		}),
-		duration: Number(episode.file.duration),
-		durationAsString: convertDurationToTimeString(
-			Number(episode.file.duration)
-		),
-		description: episode.description,
-		url: episode.file.url,
-	}))
+		const episodes = data.map((episode) => ({
+			id: episode.id,
+			title: episode.title,
+			thumbnail: episode.thumbnail,
+			members: episode.members,
+			publishedAt: format(parseISO(episode.published_at), 'd MMM yy', {
+				locale: ptBR,
+			}),
+			duration: Number(episode.file.duration),
+			durationAsString: convertDurationToTimeString(
+				Number(episode.file.duration)
+			),
+			description: episode.description,
+			url: episode.file.url,
+			podcast: {
+				id: podcast[0].trackId,
+				name: podcast[0].trackName,
+			},
+		}))
 
-	const latestEpisodes = episodes.slice(0, 2)
-	const allEpisodes = episodes.slice(2, episodes.length)
+		const latestEpisodes = episodes.slice(0, 2)
+		const allEpisodes = episodes.slice(2, episodes.length)
 
-	return {
-		props: {
-			latestEpisodes,
-			allEpisodes,
-		},
-		revalidate: 60 * 60 * 8, // 8 hours
+		return {
+			props: {
+				latestEpisodes,
+				allEpisodes,
+			},
+			revalidate: 60 * 60 * 8, // 8 hours
+		}
+	} catch (e) {
+		console.error(e.message)
+		return {
+			props: {
+				latestEpisodes: [],
+				allEpisodes: [],
+			},
+			revalidate: 60 * 60 * 8, // 8 hours
+		}
 	}
 }
