@@ -12,6 +12,7 @@ import { api } from '../services/api'
 import { convertDurationToTimeString } from '../utils/convertDurationToTimeString'
 
 import styles from './home.module.scss'
+import iTunesFindByName, { iTunesFindFeedByUrl } from '../services/itunes/find'
 
 type Episode = {
 	id: string
@@ -151,10 +152,12 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 //SSG
 export const getStaticProps: GetStaticProps = async () => {
 	try {
-		const { data: podcast } = await api.get(`/api/itunes/find/name/faladev`)
-		const { data } = await api.post(`/api/itunes/find/feed/url`, {
-			feedUrl: podcast[0].feedUrl,
-		})
+		const podcast = await iTunesFindByName('faladev')
+		// const { data: podcast } = await api.get(`/api/itunes/find/name/faladev`)
+		// const { data } = await api.post(`/api/itunes/find/feed/url`, {
+		// 	feedUrl: podcast[0].feedUrl,
+		// })
+		const data = await iTunesFindFeedByUrl(podcast[0].feedUrl)
 
 		const episodes = data.map((episode) => ({
 			id: episode.id,

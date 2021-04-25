@@ -13,6 +13,12 @@ import { convertDurationToTimeString } from '../../utils/convertDurationToTimeSt
 
 import styles from './episode.module.scss'
 import React from 'react'
+import {
+	iTunesFindAll,
+	iTunesFindById,
+	iTunesFindFeedByPodcastId,
+	iTunesFindFeedByUrl,
+} from '../../services/itunes/find'
 
 type Episode = {
 	id: string
@@ -39,7 +45,7 @@ export default function Episode({ episode }: EpisodeProps) {
 
 	// This includes setting the noindex header because static files always
 	// return a status 200 but the rendered not found page page should obviously not be indexed
-	if (!episode)
+	if (!episode) {
 		return (
 			<>
 				<Head>
@@ -48,6 +54,15 @@ export default function Episode({ episode }: EpisodeProps) {
 				<DefaultErrorPage statusCode={404} />
 			</>
 		)
+	}
+
+	// teste()
+	// async function teste() {
+	// 	const feed = await iTunesFindFeedByUrl(
+	// 		'https://anchor.fm/s/57bd30d8/podcast/rss'
+	// 	)
+	// 	console.log({ feed })
+	// }
 
 	return (
 		<div className={styles.episode}>
@@ -90,30 +105,29 @@ export default function Episode({ episode }: EpisodeProps) {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-	const { data: podcasts } = await api.get(`/api/itunes/find/all/10`)
+	// const podcasts = await iTunesFindAll(10)
+	// const promises = []
+	// podcasts.map((podcast) => {
+	// 	promises.push(iTunesFindFeedByPodcastId(String(podcast?.id)))
+	// })
 
-	const promises = []
-	podcasts.map((podcast) => {
-		promises.push(api.get(`/api/itunes/find/feed/${podcast?.id}`))
-	})
+	// const results = await Promise.all(promises)
+	// const paths = []
 
-	const results = await Promise.all(promises)
-	const paths = []
-
-	podcasts.map((podcast, podcastIndex) => {
-		for (const episodeIndex in results) {
-			if (Number(episodeIndex) >= 2) break
-			const episode = results[Number(podcastIndex)].data[Number(episodeIndex)]
-			paths.push({
-				params: {
-					slug: [podcast.id, episode.id],
-				},
-			})
-		}
-	})
+	// podcasts.map((podcast, podcastIndex) => {
+	// 	for (const episodeIndex in results) {
+	// 		if (Number(episodeIndex) >= 2) break
+	// 		const episode = results[Number(podcastIndex)][Number(episodeIndex)]
+	// 		paths.push({
+	// 			params: {
+	// 				slug: [podcast.id, episode.id],
+	// 			},
+	// 		})
+	// 	}
+	// })
 
 	return {
-		paths,
+		paths: [],
 		fallback: 'blocking',
 	}
 }
@@ -123,10 +137,12 @@ export const getStaticProps: GetStaticProps = async (context) => {
 		const { slug } = context.params
 		const [podcastId, episodeId] = slug as string[]
 
-		const { data: podcast } = await api.get(`/api/itunes/find/id/${podcastId}`)
-		const { data: feed } = await api.post(`/api/itunes/find/feed/url`, {
-			feedUrl: podcast[0]?.feedUrl,
-		})
+		const podcast = await iTunesFindById(podcastId)
+		// const { data: podcast } = await api.get(`/api/itunes/find/id/${podcastId}`)
+		// const { data: feed } = await api.post(`/api/itunes/find/feed/url`, {
+		// 	feedUrl: podcast[0]?.feedUrl,
+		// })
+		const feed = await iTunesFindFeedByUrl(podcast[0]?.feedUrl)
 
 		const [data] = feed.filter((item) => item.id === episodeId)
 
