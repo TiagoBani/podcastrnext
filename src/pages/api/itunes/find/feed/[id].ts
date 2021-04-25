@@ -1,14 +1,29 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 
 import { toJson } from 'xml2json'
+import { api } from '../../../../../services/api'
+import { build } from '../../../views/_itunesEpisode'
 
-import { api } from '../../../services/api'
+type Episode = {
+	id: string
+	title: string
+	members: string
+	published_at: string
+	thumbnail: string
+	description: string
+	file: {
+		url: string
+		type: string
+		duration: number
+	}
+}
 
 type PodcastEpisode = {
 	description: string
 	'itunes:summary': string
 	'itunes:duration': string
 	'itunes:episode': string
+	'itunes:season': string
 	'itunes:image': {
 		href: string
 	}
@@ -49,12 +64,15 @@ type ITunesResult = {
 	resultCount: number
 	results: ITunesPodcast[]
 }
-
+async function getPodcastById(id: number): Promise<ITunesResult> {
+	const { data } = await api.get<ITunesResult>(`lookup`, {
+		baseURL: 'https://itunes.apple.com',
+		params: { id },
+	})
+	return data
+}
 async function getEpisodes(url: string): Promise<string> {
-	const result = await fetch(url)
-	const data = await result.text()
-
-	// const { data } = await api.get(url)
+	const { data } = await api.get(url)
 	return data
 }
 
@@ -66,32 +84,22 @@ function formatJson(xml: string): PodcastFeed {
 
 export default async function handler(
 	req: NextApiRequest,
-	res: NextApiResponse
+	res: NextApiResponse<Episode[] | { error: string }>
 ) {
 	try {
-		const body = JSON.parse(req.body)
-		const xml = await getEpisodes(body.feedUrl)
+		const { id } = req.query
+		const podcast = await getPodcastById(Number(id))
+		if (podcast?.results.length <= 0)
+			return res.status(204).json({ error: 'Not found' })
+
+		const xml = await getEpisodes(podcast?.results[0]?.feedUrl)
+		if (!xml) return res.status(204).json({ error: 'Not found' })
+
 		const episodes = formatJson(xml)
 
-		res.status(200).json({ ...episodes.rss.channel })
+		res.status(200).json(episodes.rss.channel.item?.map(build))
 	} catch (e) {
-		res.status(500).json({ error: e })
+		console.error(e)
+		res.status(500).json({ error: e.message })
 	}
-
-	// getFeedUrl(Number(id))
-	// 	.then((data) => getEpisodes(data.results[0].feedUrl))
-	// 	.then(formatJson)
-	// 	.then((obj) => res.status(200).json({ ...obj.rss.channel }))
-	// 	.catch((e) => res.status(500).json({ error: e }))
-
-	// const { data } = await api.get<ITunesResult>(`lookup`, {
-	// 	baseURL: 'https://itunes.apple.com',
-	// 	params: { id },
-	// })
-
-	// const { data: xml } = await api.get(data.results[0].feedUrl)
-	// const stringJson = toJson(xml)
-	// const objJson = JSON.parse(stringJson)
-
-	// res.status(200).json({ ...objJson })
 }

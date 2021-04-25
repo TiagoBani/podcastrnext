@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { api } from '../../../services/api'
+import { api } from '../../../../../services/api'
 
 type ITunesPodcast = {
 	artistName: string
@@ -28,6 +28,6 @@ export default async function handler(
 		}
 	)
 
-	if (data?.feed?.results) res.status(200).json({ ...data?.feed?.results })
+	if (data?.feed?.results?.length > 0) res.status(200).json(data?.feed?.results)
 	else res.status(204).send('')
 }

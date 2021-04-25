@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { api } from '../../../services/api'
+import { api } from '../../../../../services/api'
 
 type ITunesPodcast = {
 	trackId: number
@@ -26,6 +26,6 @@ export default async function handler(
 		baseURL: 'https://itunes.apple.com',
 		params: { term, entity: 'podcast' },
 	})
-	if (data?.results) res.status(200).json({ ...data?.results })
+	if (data?.results?.length > 0) res.status(200).json({ ...data?.results })
 	else res.status(204).send('')
 }
