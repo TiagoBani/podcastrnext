@@ -1,4 +1,4 @@
-import { GetStaticProps } from 'next'
+import { GetStaticPaths, GetStaticProps } from 'next'
 // import Image from 'next/image'
 import Link from 'next/link'
 import Head from 'next/head'
@@ -7,12 +7,17 @@ import DefaultErrorPage from 'next/error'
 import { format, parseISO } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 
-import { usePlayer } from '../contexts/PlayerContext'
-import { Image } from '../components/Image'
-import { iTunesFindFeedByUrl, iTunesFindByName } from '../services/itunes/find'
-import { convertDurationToTimeString } from '../utils/convertDurationToTimeString'
+import { usePlayer } from '../../contexts/PlayerContext'
+import { Image } from '../../components/Image'
+import {
+	iTunesFindAll,
+	iTunesFindByName,
+	iTunesFindFeedByUrl,
+} from '../../services/itunes/find'
+import { convertDurationToTimeString } from '../../utils/convertDurationToTimeString'
+import { slugify } from '../../utils/slugify'
 
-import styles from './home.module.scss'
+import styles from './podcast.module.scss'
 
 type Episode = {
 	id: string
@@ -35,7 +40,7 @@ type HomeProps = {
 	latestEpisodes: Episode[]
 }
 
-export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
+export default function Podcast({ allEpisodes, latestEpisodes }: HomeProps) {
 	const { playList } = usePlayer()
 
 	const episodeList = [...latestEpisodes, ...allEpisodes]
@@ -153,10 +158,25 @@ export default function Home({ allEpisodes, latestEpisodes }: HomeProps) {
 		</div>
 	)
 }
+export const getStaticPaths: GetStaticPaths = async () => {
+	// const podcasts = await iTunesFindAll(10)
+	// const paths = podcasts.map((podcast) => ({
+	// 	params: {
+	// 		name: slugify(podcast.artistName),
+	// 	},
+	// }))
+
+	return {
+		paths: [],
+		fallback: 'blocking',
+	}
+}
 //SSG
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async (context) => {
 	try {
-		const podcast = await iTunesFindByName('faladev')
+		const { name } = context.params
+
+		const podcast = await iTunesFindByName(name as string)
 		const data = await iTunesFindFeedByUrl(podcast[0].feedUrl)
 
 		const episodes = data.map((episode) => ({
