@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
+// import Image from 'next/image'
 
 import Slider from 'rc-slider'
 import 'rc-slider/assets/index.css'
 
 import { usePlayer } from '../../contexts/PlayerContext'
 
-import styles from './styles.module.scss'
+import { Image } from '../Image'
 import { convertDurationToTimeString } from '../../utils/convertDurationToTimeString'
+import styles from './styles.module.scss'
 
 export function Player() {
 	const audioRef = useRef<HTMLAudioElement>(null)
@@ -77,17 +78,23 @@ export function Player() {
 		<div className={styles.playerContainer}>
 			<header>
 				<img src='/playing.svg' alt='Tocando agora' />
-				<strong>Tocando agora {episode?.podcast?.name}</strong>
+				<strong>
+					Tocando agora
+					<br />
+					{episode?.podcast?.name}
+				</strong>
 			</header>
 
 			{episode ? (
 				<div className={styles.currentEpisode}>
-					<Image
-						width={592}
-						height={592}
-						src={episode.thumbnail}
-						objectFit='cover'
-					/>
+					{episode.thumbnail && (
+						<Image
+							width={592}
+							height={592}
+							url={episode.thumbnail}
+							objectFit='cover'
+						/>
+					)}
 					<strong>{episode.title}</strong>
 					<span>{episode.members}</span>
 				</div>

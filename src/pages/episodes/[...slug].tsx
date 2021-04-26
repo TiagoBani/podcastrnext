@@ -1,5 +1,6 @@
+import React from 'react'
 import { GetStaticPaths, GetStaticProps } from 'next'
-import Image from 'next/image'
+// import Image from 'next/image'
 import Link from 'next/link'
 import Head from 'next/head'
 import DefaultErrorPage from 'next/error'
@@ -8,17 +9,13 @@ import { format, parseISO } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 
 import { usePlayer } from '../../contexts/PlayerContext'
-import { api } from '../../services/api'
+import { Image } from '../../components/Image'
+import { iTunesFindById, iTunesFindFeedByUrl } from '../../services/itunes/find'
+
 import { convertDurationToTimeString } from '../../utils/convertDurationToTimeString'
+import { slugify } from '../../utils/slugify'
 
 import styles from './episode.module.scss'
-import React from 'react'
-import {
-	iTunesFindAll,
-	iTunesFindById,
-	iTunesFindFeedByPodcastId,
-	iTunesFindFeedByUrl,
-} from '../../services/itunes/find'
 
 type Episode = {
 	id: string
@@ -56,14 +53,6 @@ export default function Episode({ episode }: EpisodeProps) {
 		)
 	}
 
-	// teste()
-	// async function teste() {
-	// 	const feed = await iTunesFindFeedByUrl(
-	// 		'https://anchor.fm/s/57bd30d8/podcast/rss'
-	// 	)
-	// 	console.log({ feed })
-	// }
-
 	return (
 		<div className={styles.episode}>
 			<Head>
@@ -71,18 +60,20 @@ export default function Episode({ episode }: EpisodeProps) {
 			</Head>
 
 			<div className={styles.thumbnailContainer}>
-				<Link href='/'>
+				<Link href={`/podcasts/${episode.podcast.id}`}>
 					<button>
 						<img src='/arrow-left.svg' alt='Voltar' />
 					</button>
 				</Link>
 
-				<Image
-					width={700}
-					height={160}
-					src={episode.thumbnail}
-					objectFit='cover'
-				/>
+				{episode.thumbnail && (
+					<Image
+						width={700}
+						height={160}
+						url={episode.thumbnail}
+						objectFit='cover'
+					/>
+				)}
 
 				<button type='button' onClick={() => play(episode)}>
 					<img src='/play.svg' alt='Tocar episódio' />
@@ -98,7 +89,9 @@ export default function Episode({ episode }: EpisodeProps) {
 
 			<div
 				className={styles.description}
-				dangerouslySetInnerHTML={{ __html: episode.description }}
+				dangerouslySetInnerHTML={{
+					__html: episode.description || 'Sem descrição',
+				}}
 			/>
 		</div>
 	)
@@ -117,7 +110,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	// podcasts.map((podcast, podcastIndex) => {
 	// 	for (const episodeIndex in results) {
 	// 		if (Number(episodeIndex) >= 2) break
+
 	// 		const episode = results[Number(podcastIndex)][Number(episodeIndex)]
+
 	// 		paths.push({
 	// 			params: {
 	// 				slug: [podcast.id, episode.id],
@@ -138,10 +133,6 @@ export const getStaticProps: GetStaticProps = async (context) => {
 		const [podcastId, episodeId] = slug as string[]
 
 		const podcast = await iTunesFindById(podcastId)
-		// const { data: podcast } = await api.get(`/api/itunes/find/id/${podcastId}`)
-		// const { data: feed } = await api.post(`/api/itunes/find/feed/url`, {
-		// 	feedUrl: podcast[0]?.feedUrl,
-		// })
 		const feed = await iTunesFindFeedByUrl(podcast[0]?.feedUrl)
 
 		const [data] = feed.filter((item) => item.id === episodeId)
@@ -158,8 +149,11 @@ export const getStaticProps: GetStaticProps = async (context) => {
 			durationAsString: convertDurationToTimeString(Number(data.file.duration)),
 			description: data.description,
 			url: data.file.url,
+			podcast: {
+				id: slugify(podcast[0].artistName),
+				name: data.podcast.name,
+			},
 		}
-
 		return {
 			props: {
 				episode,

@@ -1,4 +1,4 @@
-export type ITunesFeedPodcast = {
+export interface ITunesFeedPodcast {
 	artistName: string
 	id: number
 	name: string
@@ -7,13 +7,13 @@ export type ITunesFeedPodcast = {
 	artworkUrl100: string
 	url: string
 }
-export type ITunesFeed = {
+export interface ITunesFeed {
 	feed: {
 		results: ITunesFeedPodcast[]
 	}
 }
 
-export type ITunesPodcast = {
+export interface ITunesPodcast {
 	trackId: number
 	trackName: string
 	artistName: string
@@ -24,12 +24,12 @@ export type ITunesPodcast = {
 	artworkUrl600: string
 	primaryGenreName: string
 }
-export type ITunesResult = {
+export interface ITunesResult {
 	resultCount: number
 	results: ITunesPodcast[]
 }
 
-export type Episode = {
+export interface Episode {
 	id: string
 	title: string
 	members: string
@@ -41,17 +41,32 @@ export type Episode = {
 		type: string
 		duration: number
 	}
+	podcast: {
+		id: string
+		name: string
+	}
 }
 
-export type PodcastEpisode = {
+export interface PodcastEpisode {
 	description: string
+	'googleplay:description': string
 	'itunes:summary': string
 	'itunes:duration': string
 	'itunes:episode': string
 	'itunes:season': string
-	'itunes:image': {
-		href: string
-	}
+	'itunes:image':
+		| {
+				href: string
+		  }
+		| string
+	'googleplay:image':
+		| {
+				href: string
+		  }
+		| string
+	'dc:creator': string
+	'itunes:author': string
+	'googleplay:author': string
 	title: string
 	pubDate: string
 	enclosure: {
@@ -60,7 +75,7 @@ export type PodcastEpisode = {
 		url: string
 	}
 }
-export type PodcastChannel = {
+export interface PodcastChannel {
 	author: string
 	description: string
 	image: {
@@ -69,7 +84,7 @@ export type PodcastChannel = {
 	'itunes:image': string
 	item: PodcastEpisode[]
 }
-export type PodcastFeed = {
+export interface PodcastFeed {
 	rss: {
 		channel: PodcastChannel
 	}

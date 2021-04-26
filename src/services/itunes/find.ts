@@ -8,7 +8,7 @@ import {
 	ITunesPodcast,
 	ITunesResult,
 	PodcastFeed,
-} from './findTypes'
+} from './find.d'
 import { build } from './itunesBuild'
 
 export async function iTunesFindAll(top: number): Promise<ITunesFeedPodcast[]> {
@@ -24,20 +24,16 @@ export async function iTunesFindAll(top: number): Promise<ITunesFeedPodcast[]> {
 
 export async function iTunesFindById(id: string): Promise<ITunesPodcast[]> {
 	const { data } = await api.get<ITunesResult>(`lookup`, {
-		// baseURL: 'https://itunes.apple.com',
 		params: { id },
 	})
 	return { ...data?.results }
 }
 
-export default async function iTunesFindByName(
-	term: string
-): Promise<ITunesPodcast[]> {
+export async function iTunesFindByName(term: string): Promise<ITunesPodcast[]> {
 	const { data } = await api.get<ITunesResult>(`search`, {
-		// baseURL: 'https://itunes.apple.com',
 		params: { term, entity: 'podcast' },
 	})
-	return { ...data?.results }
+	return data?.results
 }
 
 export async function iTunesFindFeedByPodcastId(
