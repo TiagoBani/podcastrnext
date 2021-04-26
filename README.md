@@ -1,6 +1,9 @@
 # podcastr
 
+![ezgif-4-8729afd2d22b](https://user-images.githubusercontent.com/3676633/116022541-c4737f80-a620-11eb-8224-278c80ecf587.gif)
+
 ## Search podcasts
+
 
 - [ ] main frame to search by name, podcastId or gender
 - [x] search episodes by podcasts name
