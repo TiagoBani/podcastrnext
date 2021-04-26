@@ -159,15 +159,15 @@ export default function Podcast({ allEpisodes, latestEpisodes }: HomeProps) {
 	)
 }
 export const getStaticPaths: GetStaticPaths = async () => {
-	const podcasts = await iTunesFindAll(10)
-	const paths = podcasts.map((podcast) => ({
-		params: {
-			name: slugify(podcast.artistName),
-		},
-	}))
+	// const podcasts = await iTunesFindAll(10)
+	// const paths = podcasts.map((podcast) => ({
+	// 	params: {
+	// 		name: slugify(podcast.artistName),
+	// 	},
+	// }))
 
 	return {
-		paths,
+		paths: [],
 		fallback: 'blocking',
 	}
 }
