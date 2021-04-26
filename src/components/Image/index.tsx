@@ -1,5 +1,5 @@
 import NextImage from 'next/image'
-import { images } from '../../../next.config'
+import { domains } from '../../utils/imageDomain'
 
 type ImgElementStyle = NonNullable<JSX.IntrinsicElements['img']['style']>
 
@@ -12,7 +12,7 @@ type ImageProps = {
 }
 
 export function Image({ url, height, width, alt, objectFit }: ImageProps) {
-	const domainIndex = images.domains.findIndex((domain) => url.includes(domain))
+	const domainIndex = domains.findIndex((domain) => url.includes(domain))
 	if (domainIndex < 0) return <></>
 
 	return (
